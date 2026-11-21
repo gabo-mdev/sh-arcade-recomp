@@ -64,13 +64,10 @@ struct MenuLocale {
 
   const char* debug_title;
   const char* debug_section_game;
-  const char* debug_section_audio;
   const char* debug_stage_select;
   const char* debug_fast_boot;
   const char* debug_invincible;
   const char* debug_untouchable;
-  const char* debug_uncap;
-  const char* debug_mono;
 };
 
 inline const MenuLocale& menu_locale(int language) {
@@ -131,13 +128,10 @@ inline const MenuLocale& menu_locale(int language) {
 
       "Debug",
       "Game",
-      "Audio",
       "Stage select",
       "Fast boot",
       "Invincible",
       "Untouchable",
-      "Unlock FPS",
-      "Mono",
   };
   static const MenuLocale kEs{
       "Opciones",
@@ -196,13 +190,10 @@ inline const MenuLocale& menu_locale(int language) {
 
       "Depuracion",
       "Juego",
-      "Audio",
       "Selector de nivel",
       "Arranque rapido",
       "Invencible",
       "Intocable",
-      "FPS sin limite",
-      "Mono",
   };
   if (language == int(UiLanguage::Spanish))
     return kEs;

@@ -31,9 +31,10 @@ splatterhouse.exe --prepare path\to\splatter.zip
 ```
 
 Escape opens the options menu (language: English default, Spanish available).
-The **debug panel** (stage select, fast boot, invincible, etc.) is off by
-default: set `debug_menu=1` in `options.cfg`, then press **F1** (or R3 on a
-gamepad). Full list: [debug menu](docs/08-debug-menu.md).
+The **debug panel** (stage select, fast boot, invincible, untouchable) is off
+by default: set `debug_menu=1` in `options.cfg`, then press **F1** (or R3 on a
+gamepad). Unlock FPS and mono stay in Escape options. Full list:
+[debug menu](docs/08-debug-menu.md).
 
 Linux x64 builds are experimental (same flags; binary name `splatterhouse`).
 

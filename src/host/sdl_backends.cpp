@@ -369,10 +369,9 @@ struct SdlPresent final : IPresentBackend {
     char title[96];
     std::snprintf(title, sizeof(title), "%s###sh_debug", loc.debug_title);
     if (ImGui::Begin(title, &menu_)) {
+      // Unlock FPS / Mono live in Escape options only — keep this panel for cheats.
       char game_hdr[64];
-      char audio_hdr[64];
       std::snprintf(game_hdr, sizeof(game_hdr), "%s###dbg_game", loc.debug_section_game);
-      std::snprintf(audio_hdr, sizeof(audio_hdr), "%s###dbg_audio", loc.debug_section_audio);
       if (ImGui::CollapsingHeader(game_hdr, ImGuiTreeNodeFlags_DefaultOpen)) {
         bool stage = options_ && options_->stage_select;
         if (ImGui::Checkbox(loc.debug_stage_select, &stage) && options_) {
@@ -392,18 +391,6 @@ struct SdlPresent final : IPresentBackend {
         bool ghost = options_ && options_->untouchable;
         if (ImGui::Checkbox(loc.debug_untouchable, &ghost) && options_) {
           options_->untouchable = ghost;
-          options_->dirty = true;
-        }
-        bool uncap = options_ && options_->uncap_fps;
-        if (ImGui::Checkbox(loc.debug_uncap, &uncap) && options_) {
-          options_->uncap_fps = uncap;
-          options_->dirty = true;
-        }
-      }
-      if (ImGui::CollapsingHeader(audio_hdr, ImGuiTreeNodeFlags_DefaultOpen)) {
-        bool mono = options_ && options_->mono_audio;
-        if (ImGui::Checkbox(loc.debug_mono, &mono) && options_) {
-          options_->mono_audio = mono;
           options_->dirty = true;
         }
       }
