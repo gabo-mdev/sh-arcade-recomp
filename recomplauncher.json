@@ -2,7 +2,7 @@
   "$schema": "https://recomplauncher.com/schema/recomplauncher.json",
   "format": 1,
   "name": "Splatterhouse",
-  "repo": "tarkovopsapp/sh-arcade-recomp",
+  "repo": "gabo-mdev/sh-arcade-recomp",
   "inputs": [
     {
       "id": "romset",

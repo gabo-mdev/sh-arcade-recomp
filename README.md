@@ -9,7 +9,7 @@ This is **not** the Xbox 360 (2010) recomp. It targets the arcade board.
 
 ## How to play
 
-1. Install from [RecompLauncher](https://recomplauncher.com) (once listed) or a [GitHub Release](https://github.com/tarkovopsapp/sh-arcade-recomp/releases).
+1. Install from [RecompLauncher](https://recomplauncher.com) (once listed) or a [GitHub Release](https://github.com/gabo-mdev/sh-arcade-recomp/releases).
 2. Point Easy Setup at your MAME `splatter.zip` (World / SH3), or a folder of its ROM files.
 3. Press Play. Escape opens in-game options; language defaults to English (Spanish available).
 
