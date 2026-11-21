@@ -48,6 +48,13 @@ Still open on the hybrid plan:
 2. Static recompilation of 6809 code → C
 3. Later: presentation options + OST replacement hooks
 
+## Known issues
+
+- **Fire Dead SFX delay.** The Fire Dead death/voice sample can start late
+  relative to the on-screen hit. The cue shares the MCU voice mailbox with
+  other DAC one-shots, so commands can queue and play behind the animation.
+  Tracking notes: [audio SFX](docs/07-audio-sfx.md).
+
 ## Requirements (players)
 
 - Windows 10/11 x64
