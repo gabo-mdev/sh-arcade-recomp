@@ -20,17 +20,18 @@ stick and d-pad move, X/B/RB/RT attack, A/Y/LB/LT jump, Menu starts, View insert
 
 ## ROM setup
 
-`splatterhouse.exe` accepts a prepared `rom/` folder, a loose MAME ROM folder,
-or `splatter.zip` (World / SH3). Clones are not supported yet. Zip extract on
-Windows uses `tar` (or .NET `ZipFile`). Mapped images go under `rom/` next to
-the exe, or under `--data` / `RECOMPLAUNCHER_DATA` when a launcher provides one.
+`splatterhouse` accepts a prepared `rom/` folder, a loose MAME ROM folder, or
+`splatter.zip` (World / SH3). Clones are not supported yet. Zip extract uses
+`tar` (Windows also falls back to .NET `ZipFile`; Linux can use `unzip`).
+Mapped images go under `rom/` next to the exe, or under `--data` /
+`RECOMPLAUNCHER_DATA` when a front-end sets a data directory.
 
-Launcher-oriented flags (opt-in; unchanged without them):
+Optional setup flags:
 
 - `--game PATH` — romset zip, MAME folder, or prepared `rom/`
 - `--data PATH` — options.cfg + prepared `rom/` live here
 - `--prepare` — windowless setup; with `RECOMPLAUNCHER=1` prints
-  `progress 0.4 Text` lines for the setup screen
+  `progress 0.4 Text` lines for progress UIs
 
 Python `tools/extract_rom.py` remains as a dev helper.
 

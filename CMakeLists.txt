@@ -114,11 +114,13 @@ if(SH_HOST_SDL)
   target_include_directories(splatterhouse PRIVATE ${rmlui_SOURCE_DIR}/Backends)
   target_compile_definitions(splatterhouse PRIVATE SH_HOST_SDL=1 RMLUI_SDL_VERSION_MAJOR=3)
   target_link_libraries(splatterhouse PRIVATE SDL3::SDL3-static imgui rmlui_core)
-  # GUI subsystem: double-click opens the game window with no console flash.
-  # Keep main() as the entry point (MSVC would otherwise look for WinMain).
-  set_target_properties(splatterhouse PROPERTIES WIN32_EXECUTABLE TRUE)
-  if(MSVC)
-    target_link_options(splatterhouse PRIVATE "/ENTRY:mainCRTStartup")
+  if(WIN32)
+    # GUI subsystem: double-click opens the game window with no console flash.
+    # Keep main() as the entry point (MSVC would otherwise look for WinMain).
+    set_target_properties(splatterhouse PROPERTIES WIN32_EXECUTABLE TRUE)
+    if(MSVC)
+      target_link_options(splatterhouse PRIVATE "/ENTRY:mainCRTStartup")
+    endif()
   endif()
 endif()
 

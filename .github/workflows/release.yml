@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without v prefix (workflow_dispatch only; tags use the tag name)"
+        required: false
+        default: "0.1.0"
 
 permissions:
   contents: write
@@ -20,19 +26,99 @@ jobs:
       - name: Build
         shell: cmd
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSH_HOST_SDL=ON
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSH_HOST_SDL=ON -DSH_BUILD_TESTS=OFF
           cmake --build build --config Release --parallel
 
       - name: Pack
         shell: pwsh
         run: |
-          $ver = "${{ github.ref_name }}".TrimStart("v")
+          $ref = "${{ github.ref_name }}"
+          if ($ref -like "v*") { $ver = $ref.TrimStart("v") }
+          else { $ver = "${{ inputs.version }}" }
+          if (-not $ver) { $ver = "0.1.0" }
           .\tools\pack_release.ps1 -Version $ver -Exe .\build\splatterhouse.exe
+          echo "VERSION=$ver" >> $env:GITHUB_ENV
 
-      - name: Upload release asset
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: dist/Splatterhouse-Arcade-v*-Windows-x64.zip
+
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ninja-build cmake pkg-config \
+            libasound2-dev libpulse-dev libudev-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev \
+            libwayland-dev libxkbcommon-dev libdrm-dev libgbm-dev \
+            libdbus-1-dev libibus-1.0-dev \
+            unzip
+
+      - name: Build
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSH_HOST_SDL=ON -DSH_BUILD_TESTS=OFF
+          cmake --build build --parallel
+
+      - name: Pack
+        run: |
+          REF="${GITHUB_REF_NAME}"
+          if [[ "$REF" == v* ]]; then
+            VER="${REF#v}"
+          else
+            VER="${{ inputs.version }}"
+          fi
+          VER="${VER:-0.1.0}"
+          chmod +x tools/pack_release.sh
+          ./tools/pack_release.sh "$VER" build/splatterhouse
+          echo "VERSION=$VER" >> "$GITHUB_ENV"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: dist/Splatterhouse-Arcade-v*-Linux-x64.tar.gz
+
+  publish:
+    needs: [windows, linux]
+    if: always() && needs.windows.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Resolve version / tag
+        id: meta
+        run: |
+          REF="${GITHUB_REF_NAME}"
+          if [[ "$REF" == v* ]]; then
+            TAG="$REF"
+            VER="${REF#v}"
+          else
+            VER="${{ inputs.version }}"
+            VER="${VER:-0.1.0}"
+            TAG="v${VER}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          find artifacts -type f -print
+
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/Splatterhouse-v*-Windows-x64.zip
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: Splatterhouse Arcade ${{ steps.meta.outputs.tag }}
           generate_release_notes: true
+          files: artifacts/*
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

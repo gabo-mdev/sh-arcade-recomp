@@ -1,7 +1,5 @@
 # Splatterhouse (Arcade) — native PC port
 
-<a href="https://recomplauncher.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://recomplauncher.com/assets/press/launcher/badge-light.svg"><img alt="Get it on RecompLauncher" src="https://recomplauncher.com/assets/press/launcher/badge-dark.svg" height="48"></picture></a>
-
 Dedicated Namco System 1 runtime for **Splatterhouse (1988)**.
 Bring your own MAME romset (`splatter.zip`). No game code or assets are shipped.
 
@@ -9,9 +7,9 @@ This is **not** the Xbox 360 (2010) recomp. It targets the arcade board.
 
 ## How to play
 
-1. Install from [RecompLauncher](https://recomplauncher.com) (once listed) or a [GitHub Release](https://github.com/gabo-mdev/sh-arcade-recomp/releases).
-2. Point Easy Setup at your MAME `splatter.zip` (World / SH3), or a folder of its ROM files.
-3. Press Play. Escape opens in-game options; language defaults to English (Spanish available).
+1. Download a [GitHub Release](https://github.com/gabo-mdev/sh-arcade-recomp/releases).
+2. Put your MAME `splatter.zip` (World / SH3) next to the executable, or pass its path.
+3. Run the game. Escape opens in-game options; language defaults to English (Spanish available).
 
 ## Player quick start (Windows x64)
 
@@ -35,6 +33,8 @@ splatterhouse.exe --prepare path\to\splatter.zip
 Escape opens the options menu (language: English default, Spanish available).
 F1 opens the debug panel when enabled in options.
 
+Linux x64 builds are experimental (same flags; binary name `splatterhouse`).
+
 ## Status
 
 **Playable end-to-end** on the dedicated NS1 runtime (interpreters): bring your
@@ -57,18 +57,20 @@ Still open on the hybrid plan:
 
 ## Requirements (players)
 
-- Windows 10/11 x64
+- Windows 10/11 x64 (primary); Linux x64 experimental
 - Your own MAME Splatterhouse romset (`splatter.zip`, World / SH3)
 
 ## Requirements (developers)
 
-- Windows 10/11 x64
+- Windows 10/11 x64 or Linux x64
 - CMake 3.25+, Ninja, Clang or MSVC (C++20)
 - Python 3.10+ (optional; only for the legacy `tools/extract_rom.py` helper)
 - SDL3 (fetched via CMake `FetchContent`)
 - Optional: MAME ~0.287+ for oracle traces
 
 ## Build from source
+
+### Windows
 
 ```powershell
 # Optional: pre-build rom/ with the Python helper (the exe can also do this)
@@ -84,6 +86,18 @@ python tools/extract_rom.py splatter.zip
 If you call `cmake`/`ninja` by hand, use an **x64 Native Tools / Developer PowerShell for VS**
 prompt. A normal PowerShell lacks MSVC include paths (`cstdint` not found).
 
+### Linux
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSH_HOST_SDL=ON
+cmake --build build --parallel
+./build/splatterhouse --headless --frames 5
+```
+
+On Debian/Ubuntu you typically need packages for SDL’s video/audio backends, e.g.
+`ninja-build`, `cmake`, `pkg-config`, and X11/Wayland/ALSA/Pulse/udev development
+headers. CI installs a known set in `.github/workflows/release.yml`.
+
 ### Recomp / analysis scaffolding
 
 ```powershell
@@ -91,22 +105,25 @@ python tools/analyze.py      # -> analysis/static.json
 python tools/transpile.py    # -> src/gen/main_recomp.cpp (gitignored)
 ```
 
-## Launcher notes
+## Releases
 
-- **RecompLauncher:** [`recomplauncher.json`](recomplauncher.json) ships in every release
-  zip next to `splatterhouse.exe`. Easy Setup takes `splatter.zip` (or a ROM folder),
-  runs `--prepare`, and exposes video/audio/language settings from `options.cfg`.
-  Pack a release with `.\tools\pack_release.ps1 -Version 0.1.0` (or tag `v*` to run
-  the GitHub Actions release workflow).
-- **Quiver Launcher:** publish the same Windows-x64 zip (no ROMs) and submit the repo at
-  [quiverlauncher.com/submit](https://quiverlauncher.com/submit).
+Tag `v*` (for example `v0.1.0`) to run GitHub Actions: Windows x64 zip and an
+experimental Linux x64 tarball attach to the release. Local packing:
+
+```powershell
+.\tools\pack_release.ps1 -Version 0.1.0
+```
+
+```bash
+./tools/pack_release.sh 0.1.0
+```
 
 ## Layout
 
 ```
 rom/          # gitignored — prepared romset (auto-built next to the exe)
 docs/         # hardware notes and verification
-tools/        # extract, analyze, transpile, MAME Lua, diffs
+tools/        # extract, analyze, transpile, MAME Lua, diffs, pack scripts
 src/
   cpu/        # MC6809E + HD63701
   bus/        # CUS117 + virtual address decode
@@ -116,7 +133,6 @@ src/
   machine/    # runtime + ROM prepare/load
   gen/        # generated recomp output (gitignored)
 tests/
-recomplauncher.json
 ```
 
 ## Legal

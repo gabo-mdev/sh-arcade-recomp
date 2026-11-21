@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <map>
 #include <string>
@@ -174,10 +175,51 @@ void clear_dir_files(const fs::path& dir) {
   }
 }
 
+void flatten_nested_romset(const fs::path& dest) {
+  FileMap files = index_dir(dest);
+  if (detect_set(files))
+    return;
+  for (const auto& entry : fs::directory_iterator(dest)) {
+    if (!entry.is_directory())
+      continue;
+    FileMap nested = index_dir(entry.path());
+    if (!detect_set(nested))
+      continue;
+    for (const auto& [_, src] : nested) {
+      const fs::path target = dest / src.filename();
+      std::error_code ec;
+      fs::rename(src, target, ec);
+      if (ec)
+        fs::copy_file(src, target, fs::copy_options::overwrite_existing);
+    }
+    break;
+  }
+}
+
 #if defined(_WIN32)
-void extract_zip_windows(const fs::path& zip, const fs::path& dest) {
+bool run_hidden_process(const std::wstring& cmd) {
+  STARTUPINFOW si{};
+  si.cb = sizeof(si);
+  PROCESS_INFORMATION pi{};
+  std::vector<wchar_t> mutable_cmd(cmd.begin(), cmd.end());
+  mutable_cmd.push_back(0);
+  if (!CreateProcessW(nullptr, mutable_cmd.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW,
+                      nullptr, nullptr, &si, &pi))
+    return false;
+  WaitForSingleObject(pi.hProcess, INFINITE);
+  DWORD code = 1;
+  GetExitCodeProcess(pi.hProcess, &code);
+  CloseHandle(pi.hThread);
+  CloseHandle(pi.hProcess);
+  return code == 0;
+}
+#endif
+
+void extract_zip(const fs::path& zip, const fs::path& dest) {
   fs::create_directories(dest);
   clear_dir_files(dest);
+
+#if defined(_WIN32)
   // Prefer tar (fast); fall back to .NET ZipFile. Avoid Expand-Archive — it hangs
   // easily on many small ROM files when launched with CREATE_NO_WINDOW.
   auto ps_quote = [](std::wstring s) {
@@ -191,63 +233,48 @@ void extract_zip_windows(const fs::path& zip, const fs::path& dest) {
     }
     return out;
   };
-  auto run_hidden = [](std::wstring cmd) -> DWORD {
-    STARTUPINFOW si{};
-    si.cb = sizeof(si);
-    PROCESS_INFORMATION pi{};
-    std::vector<wchar_t> mutable_cmd(cmd.begin(), cmd.end());
-    mutable_cmd.push_back(0);
-    if (!CreateProcessW(nullptr, mutable_cmd.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW,
-                        nullptr, nullptr, &si, &pi))
-      return 0xFFFFFFFFu;
-    WaitForSingleObject(pi.hProcess, INFINITE);
-    DWORD code = 1;
-    GetExitCodeProcess(pi.hProcess, &code);
-    CloseHandle(pi.hThread);
-    CloseHandle(pi.hProcess);
-    return code;
-  };
-
   const std::wstring zip_w = zip.wstring();
   const std::wstring dest_w = dest.wstring();
   const std::wstring tar_cmd = L"tar.exe -xf \"" + zip_w + L"\" -C \"" + dest_w + L"\"";
-  DWORD code = run_hidden(tar_cmd);
-  if (code != 0) {
+  bool ok = run_hidden_process(tar_cmd);
+  if (!ok) {
     const std::wstring ps_cmd =
         L"powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
         L"Add-Type -AssemblyName System.IO.Compression.FileSystem; "
         L"[IO.Compression.ZipFile]::ExtractToDirectory('" +
         ps_quote(zip_w) + L"', '" + ps_quote(dest_w) + L"')";
-    code = run_hidden(ps_cmd);
-    if (code != 0)
-      throw Error("Zip extract failed for " + zip.string());
+    ok = run_hidden_process(ps_cmd);
   }
-
-  // Some zips nest files one folder deep — flatten one level if needed.
-  FileMap files = index_dir(dest);
-  if (!detect_set(files)) {
-    for (const auto& entry : fs::directory_iterator(dest)) {
-      if (!entry.is_directory())
-        continue;
-      FileMap nested = index_dir(entry.path());
-      if (!detect_set(nested))
-        continue;
-      for (const auto& [_, src] : nested) {
-        const fs::path target = dest / src.filename();
-        std::error_code ec;
-        fs::rename(src, target, ec);
-        if (ec)
-          fs::copy_file(src, target, fs::copy_options::overwrite_existing);
-      }
-      break;
-    }
-  }
-}
+  if (!ok)
+    throw Error("Zip extract failed for " + zip.string());
 #else
-void extract_zip_windows(const fs::path&, const fs::path&) {
-  throw Error("Zip extraction requires Windows tar/.NET ZipFile, or pass an extracted folder");
-}
+  auto sh_quote = [](const std::string& s) {
+    std::string out = "'";
+    for (char c : s) {
+      if (c == '\'')
+        out += "'\\''";
+      else
+        out += c;
+    }
+    out += "'";
+    return out;
+  };
+  const std::string zip_s = zip.string();
+  const std::string dest_s = dest.string();
+  const std::string tar_cmd =
+      "tar -xf " + sh_quote(zip_s) + " -C " + sh_quote(dest_s) + " 2>/dev/null";
+  int code = std::system(tar_cmd.c_str());
+  if (code != 0) {
+    const std::string unzip_cmd =
+        "unzip -oq " + sh_quote(zip_s) + " -d " + sh_quote(dest_s) + " 2>/dev/null";
+    code = std::system(unzip_cmd.c_str());
+  }
+  if (code != 0)
+    throw Error("Zip extract failed for " + zip.string() + " (need tar or unzip)");
 #endif
+
+  flatten_nested_romset(dest);
+}
 
 void build_images(const fs::path& out_dir, const SetInfo& set, const FileMap& files) {
   std::vector<u8> mainrom(0x400000, 0);
@@ -354,7 +381,7 @@ fs::path prepare_rom_dir(const fs::path& zip_or_dir, const fs::path& out_dir, bo
     emit_progress(progress, 0.10, "Extracting romset");
     if (!progress)
       std::printf("Extracting %s\n", src.string().c_str());
-    extract_zip_windows(src, extract_to);
+    extract_zip(src, extract_to);
     emit_progress(progress, 0.35, "Reading ROM files");
     prepare_from_mame_files(index_dir(extract_to), out_dir, progress);
     fs::remove_all(extract_to, ec);

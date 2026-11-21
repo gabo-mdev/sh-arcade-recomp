@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build
+        shell: cmd
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSH_HOST_SDL=ON -DSH_BUILD_TESTS=ON
+          cmake --build build --config Release --parallel
+
+      - name: Smoke (headless)
+        shell: pwsh
+        run: |
+          if (Test-Path .\splatter.zip) {
+            .\build\splatterhouse.exe --prepare --game .\splatter.zip --data $env:RUNNER_TEMP\sh_data
+            .\build\splatterhouse.exe --headless --frames 5 --game "$env:RUNNER_TEMP\sh_data\rom" --data $env:RUNNER_TEMP\sh_data
+          } else {
+            Write-Host "No splatter.zip in repo (expected) — skip ROM smoke."
+            .\build\sh_smoke.exe
+          }
+
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ninja-build cmake pkg-config \
+            libasound2-dev libpulse-dev libudev-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev \
+            libwayland-dev libxkbcommon-dev libdrm-dev libgbm-dev \
+            libdbus-1-dev libibus-1.0-dev \
+            unzip
+
+      - name: Build
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSH_HOST_SDL=ON -DSH_BUILD_TESTS=ON
+          cmake --build build --parallel
+
+      - name: Smoke (CPU)
+        run: ./build/sh_smoke
