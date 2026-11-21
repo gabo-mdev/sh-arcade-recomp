@@ -31,15 +31,18 @@ splatterhouse.exe --prepare path\to\splatter.zip
 ```
 
 Escape opens the options menu (language: English default, Spanish available).
-F1 opens the debug panel when enabled in options.
+The **debug panel** (stage select, fast boot, invincible, etc.) is off by
+default: set `debug_menu=1` in `options.cfg`, then press **F1** (or R3 on a
+gamepad). Full list: [debug menu](docs/08-debug-menu.md).
 
 Linux x64 builds are experimental (same flags; binary name `splatterhouse`).
 
 ## Status
 
 **Playable end-to-end** on the dedicated NS1 runtime (interpreters): bring your
-own MAME romset, Coin/Start, full stages. Host options (Escape, EN/ES) and
-debug (F1) are in.
+own MAME romset, Coin/Start, full stages. Host options (Escape, EN/ES) and an
+optional debug panel (F1; see [docs/08-debug-menu.md](docs/08-debug-menu.md))
+are in.
 
 Still open on the hybrid plan:
 
@@ -122,7 +125,7 @@ experimental Linux x64 tarball attach to the release. Local packing:
 
 ```
 rom/          # gitignored — prepared romset (auto-built next to the exe)
-docs/         # hardware notes and verification
+docs/         # hardware notes, verification, host debug menu
 tools/        # extract, analyze, transpile, MAME Lua, diffs, pack scripts
 src/
   cpu/        # MC6809E + HD63701

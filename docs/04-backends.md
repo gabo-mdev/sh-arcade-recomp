@@ -14,9 +14,12 @@ Always available. Used for `--headless`, CI, and oracle runs.
 
 Built when CMake `-DSH_HOST_SDL=ON`. Integer scale present. Keyboard defaults
 match MAME (arrows / Z / X / 1 / 5). Escape opens the play options menu
-(video/audio/controls/language). F1, or right-stick click, opens the debug
-panel when `debug_menu` is enabled. The first gamepad uses an Xbox layout:
-stick and d-pad move, X/B/RB/RT attack, A/Y/LB/LT jump, Menu starts, View inserts a coin.
+(video/audio/controls/language). F1, or right-stick click (R3), opens the
+ImGui debug panel when `debug_menu=1` in `options.cfg` (not exposed in the
+Escape UI). See [08-debug-menu.md](08-debug-menu.md) for how to enable it and
+every checkbox. The first gamepad uses an Xbox layout: stick and d-pad move,
+X/B/RB/RT attack, A/Y/LB/LT jump, Menu starts, View inserts a coin; L3 toggles
+Escape options.
 
 ## ROM setup
 
