@@ -1,0 +1,28 @@
+#pragma once
+
+#include "machine/romset.hpp"
+
+#include <filesystem>
+
+namespace sh {
+
+/// True when `dir` already has mapped images (`mainrom.bin`, …).
+bool is_prepared_rom_dir(const std::filesystem::path& dir);
+
+/// True when `dir` looks like a loose MAME Splatterhouse romset.
+bool is_mame_rom_dir(const std::filesystem::path& dir);
+
+/// Prefer World SH3, then SH2, then Japan.
+std::filesystem::path find_romset_zip(const std::filesystem::path& dir);
+
+/// Build mapped images into `out_dir` from a MAME folder or `splatter*.zip`.
+/// Overwrites files in `out_dir`. Returns the prepared directory.
+std::filesystem::path prepare_rom_dir(const std::filesystem::path& zip_or_dir,
+                                      const std::filesystem::path& out_dir);
+
+/// Resolve a user path (zip, MAME folder, or prepared rom/) into a prepared
+/// rom directory under `out_dir` when needed, then load it.
+RomSet load_rom_path(const std::filesystem::path& path,
+                     const std::filesystem::path& prepare_out);
+
+} // namespace sh

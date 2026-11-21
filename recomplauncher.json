@@ -1,0 +1,22 @@
+{
+  "$schema": "https://recomplauncher.com/schema/recomplauncher.json",
+  "format": 1,
+  "repo": "gabomarin/splatterrecomp",
+  "game": {
+    "kind": "folder",
+    "label": "Folder that contains splatter.zip (MAME World/SH3 preferred; splatter2.zip or splatterj.zip also work), or the extracted ROM files.",
+    "check": {
+      "file": "splatter.zip"
+    }
+  },
+  "prepare": {
+    "program": ["splatterhouse.exe"],
+    "args": ["--prepare", "{game}"],
+    "done": ["{install}/rom/mainrom.bin"],
+    "version": "1"
+  },
+  "start": {
+    "program": ["splatterhouse.exe"],
+    "args": ["{install}/rom"]
+  }
+}
