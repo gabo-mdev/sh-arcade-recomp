@@ -1,22 +1,166 @@
 {
   "$schema": "https://recomplauncher.com/schema/recomplauncher.json",
   "format": 1,
+  "name": "Splatterhouse",
   "repo": "gabomarin/splatterrecomp",
-  "game": {
-    "kind": "folder",
-    "label": "Folder that contains splatter.zip (MAME World/SH3 preferred; splatter2.zip or splatterj.zip also work), or the extracted ROM files.",
-    "check": {
-      "file": "splatter.zip"
+  "inputs": [
+    {
+      "id": "romset",
+      "label": "Your MAME Splatterhouse romset: splatter.zip (World / SH3 preferred), or a folder of its ROM files. splatter2.zip and splatterj.zip also work.",
+      "role": "game",
+      "formats": [
+        { "type": "file", "extensions": ["zip"] },
+        { "type": "folder" }
+      ]
     }
-  },
+  ],
   "prepare": {
     "program": ["splatterhouse.exe"],
-    "args": ["--prepare", "{game}"],
-    "done": ["{install}/rom/mainrom.bin"],
-    "version": "1"
+    "args": ["--prepare", "--game={input:romset}", "--data", "{data}"],
+    "label": "Map the MAME romset",
+    "done": ["{data}/rom/mainrom.bin"],
+    "version": "1",
+    "timeout": 120
   },
   "start": {
     "program": ["splatterhouse.exe"],
-    "args": ["{install}/rom"]
+    "args": ["--game", "{data}/rom", "--data", "{data}"]
+  },
+  "config": [
+    {
+      "id": "main",
+      "format": "ini",
+      "file": [{ "path": "{data}/options.cfg" }],
+      "new": {
+        "fullscreen": "0",
+        "stretch": "0",
+        "vsync": "1",
+        "uncap_fps": "0",
+        "scale": "3",
+        "volume": "100",
+        "mono_audio": "0",
+        "image_filter": "0",
+        "language": "0"
+      }
+    }
+  ],
+  "settings": [
+    {
+      "id": "language",
+      "label": "Language",
+      "group": "System",
+      "help": "Menus in English or Spanish.",
+      "choices": [
+        { "label": "English", "set": { "language": "0" } },
+        { "label": "Espanol", "set": { "language": "1" } }
+      ],
+      "defaults": { "language": "0" }
+    },
+    {
+      "id": "window",
+      "label": "Window",
+      "group": "Video",
+      "help": "Fullscreen fills the display. Windowed uses the scale below.",
+      "choices": [
+        { "label": "Windowed", "set": { "fullscreen": "0" } },
+        { "label": "Fullscreen", "set": { "fullscreen": "1" } }
+      ],
+      "defaults": { "fullscreen": "0" }
+    },
+    {
+      "id": "scale",
+      "label": "Scale",
+      "group": "Video",
+      "help": "Integer window size in multiples of 288x224.",
+      "choices": [
+        { "label": "2x", "set": { "scale": "2" } },
+        { "label": "3x", "set": { "scale": "3" } },
+        { "label": "4x", "set": { "scale": "4" } },
+        { "label": "5x", "set": { "scale": "5" } },
+        { "label": "6x", "set": { "scale": "6" } }
+      ],
+      "defaults": { "scale": "3" },
+      "when": { "fullscreen": "0" }
+    },
+    {
+      "id": "fit",
+      "label": "Fit",
+      "group": "Video",
+      "help": "Integer keeps sharp pixels. Stretch fills the window.",
+      "choices": [
+        { "label": "Integer", "set": { "stretch": "0" } },
+        { "label": "Stretch", "set": { "stretch": "1" } }
+      ],
+      "defaults": { "stretch": "0" }
+    },
+    {
+      "id": "filter",
+      "label": "Filter",
+      "group": "Video",
+      "help": "How the 288x224 picture is drawn. Sharp is nearest-neighbour.",
+      "choices": [
+        { "label": "Sharp", "set": { "image_filter": "0" } },
+        { "label": "Smooth", "set": { "image_filter": "1" } },
+        { "label": "CRT lines", "set": { "image_filter": "2" } },
+        { "label": "CRT mask", "set": { "image_filter": "3" } },
+        { "label": "CRT phosphor", "set": { "image_filter": "4" } },
+        { "label": "Contrast", "set": { "image_filter": "5" } },
+        { "label": "Sharpen", "set": { "image_filter": "6" } },
+        { "label": "HD", "set": { "image_filter": "7" } }
+      ],
+      "defaults": { "image_filter": "0" }
+    },
+    {
+      "id": "vsync",
+      "label": "VSync",
+      "group": "Video",
+      "help": "Locks the present to the display refresh.",
+      "choices": [
+        { "label": "On", "set": { "vsync": "1" } },
+        { "label": "Off", "set": { "vsync": "0" } }
+      ],
+      "defaults": { "vsync": "1" }
+    },
+    {
+      "id": "uncap",
+      "label": "Frame rate",
+      "group": "Video",
+      "help": "Arcade is about 60.6 Hz. Unlocking drops the cap and vsync so the game runs as fast as this PC allows.",
+      "choices": [
+        { "label": "Arcade", "set": { "uncap_fps": "0" } },
+        { "label": "Unlocked", "set": { "uncap_fps": "1" } }
+      ],
+      "defaults": { "uncap_fps": "0" }
+    },
+    {
+      "id": "volume",
+      "label": "Volume",
+      "group": "Audio",
+      "slider": { "key": "volume", "min": 0, "max": 100, "step": 5, "format": "%g" },
+      "defaults": { "volume": "100" }
+    },
+    {
+      "id": "mono",
+      "label": "Mono",
+      "group": "Audio",
+      "help": "Downmix stereo to both channels (PCB JP4 style).",
+      "choices": [
+        { "label": "Off", "set": { "mono_audio": "0" } },
+        { "label": "On", "set": { "mono_audio": "1" } }
+      ],
+      "defaults": { "mono_audio": "0" }
+    }
+  ],
+  "looks": {
+    "allowed": false,
+    "reason": "This build has its own image filters in Options."
+  },
+  "folders": {
+    "saves": [{ "path": "{data}" }],
+    "logs": [{ "path": "{data}" }]
+  },
+  "saves": ["{data}/options.cfg"],
+  "exit_codes": {
+    "1": "Setup or launch failed. Check that your romset is a MAME Splatterhouse set (splatter / splatter2 / splatterj)."
   }
 }

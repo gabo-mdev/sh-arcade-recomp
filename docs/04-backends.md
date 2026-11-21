@@ -22,9 +22,17 @@ stick and d-pad move, X/B/RB/RT attack, A/Y/LB/LT jump, Menu starts, View insert
 
 `splatterhouse.exe` accepts a prepared `rom/` folder, a loose MAME ROM folder,
 or `splatter.zip` / `splatter2.zip` / `splatterj.zip`. Zip extract on Windows
-uses PowerShell `Expand-Archive`; mapped images are written next to the exe
-under `rom/`. `splatterhouse.exe --prepare <path>` does that step and exits
-(for RecompLauncher). Python `tools/extract_rom.py` remains as a dev helper.
+uses PowerShell `Expand-Archive`. Mapped images go under `rom/` next to the
+exe, or under `--data` / `RECOMPLAUNCHER_DATA` when a launcher provides one.
+
+Launcher-oriented flags (opt-in; unchanged without them):
+
+- `--game PATH` — romset zip, MAME folder, or prepared `rom/`
+- `--data PATH` — options.cfg + prepared `rom/` live here
+- `--prepare` — windowless setup; with `RECOMPLAUNCHER=1` prints
+  `progress 0.4 Text` lines for the setup screen
+
+Python `tools/extract_rom.py` remains as a dev helper.
 
 ## Phase 4 extension points
 

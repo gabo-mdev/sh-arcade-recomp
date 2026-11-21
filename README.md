@@ -1,9 +1,17 @@
 # Splatterhouse (Arcade) — native PC port
 
+<a href="https://recomplauncher.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://recomplauncher.com/assets/press/launcher/badge-light.svg"><img alt="Get it on RecompLauncher" src="https://recomplauncher.com/assets/press/launcher/badge-dark.svg" height="48"></picture></a>
+
 Dedicated Namco System 1 runtime for **Splatterhouse (1988)**.
 Bring your own MAME romset (`splatter.zip`). No game code or assets are shipped.
 
 This is **not** the Xbox 360 (2010) recomp. It targets the arcade board.
+
+## How to play
+
+1. Install from [RecompLauncher](https://recomplauncher.com) (once listed) or a [GitHub Release](https://github.com/gabomarin/splatterrecomp/releases).
+2. Point Easy Setup at your MAME `splatter.zip` (World / SH3 preferred), or a folder of its ROM files.
+3. Press Play. Escape opens in-game options; language defaults to English (Spanish available).
 
 ## Player quick start (Windows x64)
 
@@ -78,13 +86,13 @@ python tools/transpile.py    # -> src/gen/main_recomp.cpp (gitignored)
 
 ## Launcher notes
 
-- **Quiver Launcher:** publish a GitHub Release named like
-  `Splatterhouse-v0.1.0-Windows-x64.zip` with `splatterhouse.exe` and
-  `recomplauncher.json` (no ROMs). Submit the repo at
+- **RecompLauncher:** [`recomplauncher.json`](recomplauncher.json) ships in every release
+  zip next to `splatterhouse.exe`. Easy Setup takes `splatter.zip` (or a ROM folder),
+  runs `--prepare`, and exposes video/audio/language settings from `options.cfg`.
+  Pack a release with `.\tools\pack_release.ps1 -Version 0.1.0` (or tag `v*` to run
+  the GitHub Actions release workflow).
+- **Quiver Launcher:** publish the same Windows-x64 zip (no ROMs) and submit the repo at
   [quiverlauncher.com/submit](https://quiverlauncher.com/submit).
-- **RecompLauncher:** Level 1 setup ships as [`recomplauncher.json`](recomplauncher.json).
-  Players drop a MAME folder (with `sh1_prg0.bin`); the launcher runs
-  `splatterhouse.exe --prepare` once, then starts from `rom/`.
 
 ## Layout
 
