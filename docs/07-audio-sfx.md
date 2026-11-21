@@ -37,13 +37,12 @@ Earlier note (2026-11-13): the sound CPU was also overclocked (slice excess
 discarded). That scheduler carry-over is a separate fix already on the tree;
 it did not complete Hymn by itself.
 
-Status: 2026-11-13. The sound CPU boot handshake, YM2151 core, basic CUS30
-waveform synthesis, 48 kHz frame size, bounded SDL queue, and coarse subframe
-synthesis are implemented. Coin plays through the emulated CUS30. The user
-reports that the OST sounds good and Rick's damage voice returned after the
-MCU timer fix. A confirmed punch sample now also starts in the port after
-fixing an HD63701 branch error. Kick, death, and monster/ambient effects
-still need direct listening and event-aligned checks.
+Status: 2026-11-21. Gameplay is playable end-to-end with working board audio.
+Bring-up notes below (from 2026-11-13) still describe the signal path and
+open listening checks: sound CPU handshake, YM2151, CUS30, 48 kHz frames,
+bounded SDL queue, and subframe synthesis are in. Coin, OST, damage voice,
+and a confirmed punch sample are known good; kick, death, and some
+monster/ambient cues still deserve event-aligned listening passes.
 
 ## Current signal path
 

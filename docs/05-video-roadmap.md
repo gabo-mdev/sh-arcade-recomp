@@ -1,19 +1,20 @@
 # Intro/demo video: next debugging steps
 
-**Next focused milestone:** the mask possessing Rick after Start Game. Follow
-[06-start-possession.md](06-start-possession.md) for the input sequence,
-capture requirements, and acceptance checks. The renderer and attract issues
-below remain open; prioritize them when they block that sequence.
-Coin/Start injection and captures are now implemented. The sequence reaches
-the first stage, but its sprites and a transient stage layer differ from MAME.
+**Gameplay status:** the port is **playable end-to-end**. This roadmap is for
+oracle video fidelity (pixel diffs vs MAME), not for “can you finish the game.”
 
-Status: 2026-11-12. Matched MAME states for the title, intro, cave, and demo
-are now pixel-identical except 3 cave pixels. The mask scene and first stage
-still differ. Coin and Start are playable: four hearts, one hit removes one
-heart. Start again opens the SH3 stage select after the attract-music
-store `$1479 = 1`; that regression is documented in
-[06-start-possession.md](06-start-possession.md) and is not to be patched
-until the music gate and the menu can be separated. Each sprite byte holds two pixels, and the left pixel is the high nibble.
+Start/possession sequence notes live in
+[06-start-possession.md](06-start-possession.md). Renderer and attract
+mismatches below remain open polish items.
+
+Status: 2026-11-21 (playable). Earlier oracle snapshot (2026-11-12): matched
+MAME states for the title, intro, cave, and demo were pixel-identical except
+3 cave pixels; mask and first-stage frames still differed on that date. Coin
+and Start give four hearts, one hit removes one. Start again opens the SH3
+stage select after the attract-music store `$1479 = 1`; that behavior is
+documented in [06-start-possession.md](06-start-possession.md) and is not to
+be patched until the music gate and the menu can be separated. Each sprite
+byte holds two pixels, and the left pixel is the high nibble.
 The old odd-column step read the low nibble first and then skipped 8 bits,
 so column 13 copied column 15. That was the line through Rick and the gap
 at the end of a punch or kick. Leave the flipped origin `sx - 150` alone.

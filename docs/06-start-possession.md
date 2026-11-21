@@ -1,10 +1,11 @@
-# Next milestone: Start Game and mask possession
+# Start Game and mask possession
 
-Status: 2026-11-12. Coin and Start reach a controllable first stage. The
-mask scene and that stage are **not yet pixel-correct**. See
-[05-video-roadmap.md](05-video-roadmap.md) for the measured video progress.
-The play rules below are host behavior in `src/machine/machine.cpp`, not a
-claim that the frames match MAME.
+Status: 2026-11-21. The game is **playable end-to-end** (Coin/Start through
+all stages). This note keeps the Start/possession bring-up and host play
+rules. Pixel-perfect oracle diffs for the mask scene and early stage frames
+are tracked in [05-video-roadmap.md](05-video-roadmap.md); the play rules
+below are host behavior in `src/machine/machine.cpp`, not a claim that every
+frame matches MAME.
 
 ## Current verified baseline
 

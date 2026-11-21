@@ -37,16 +37,16 @@ F1 opens the debug panel when enabled in options.
 
 ## Status
 
-Hybrid plan in progress:
+**Playable end-to-end** on the dedicated NS1 runtime (interpreters): bring your
+own MAME romset, Coin/Start, full stages. Host options (Escape, EN/ES) and
+debug (F1) are in.
 
-1. Dedicated NS1 runtime (interpreters) — playable path
-2. MAME oracle verification (traces / frames / audio)
-3. Static recompilation of 6809 code → C
-4. Later: presentation options + OST replacement hooks
+Still open on the hybrid plan:
 
-Coin and Start reach a controllable first stage. Audio bring-up continues;
-see [audio SFX progress](docs/07-audio-sfx.md) and
-[video roadmap](docs/05-video-roadmap.md).
+1. MAME oracle polish (remaining pixel/audio diffs) — see
+   [video roadmap](docs/05-video-roadmap.md) and [audio SFX](docs/07-audio-sfx.md)
+2. Static recompilation of 6809 code → C
+3. Later: presentation options + OST replacement hooks
 
 ## Requirements (players)
 
