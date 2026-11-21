@@ -326,17 +326,27 @@ void build_images(const fs::path& out_dir, const SetInfo& set, const FileMap& fi
   meta << "desc=" << set.desc << "\n";
 }
 
-void prepare_from_mame_files(const FileMap& files, const fs::path& out_dir) {
+void emit_progress(bool progress, double value, const char* text) {
+  if (!progress)
+    return;
+  std::printf("progress %.2f %s\n", value, text);
+  std::fflush(stdout);
+}
+
+void prepare_from_mame_files(const FileMap& files, const fs::path& out_dir, bool progress) {
   const SetInfo* set = detect_set(files);
   if (!set)
     throw Error(
         "Could not detect Splatterhouse set. Need SH3 (sh3_prg*), SH2 (sh2_prg*), or SH1 "
         "(sh1_prg6/7).");
+  emit_progress(progress, 0.45, "Checking ROM files");
   validate(files, *set);
   fs::create_directories(out_dir);
-  // Keep source MAME files if out_dir is the same folder; still rewrite mapped images.
+  emit_progress(progress, 0.70, "Building mapped images");
   build_images(out_dir, *set, files);
-  std::printf("Prepared set '%s' (%s) in %s\n", set->name, set->desc, out_dir.string().c_str());
+  emit_progress(progress, 0.95, "Finishing");
+  if (!progress)
+    std::printf("Prepared set '%s' (%s) in %s\n", set->name, set->desc, out_dir.string().c_str());
 }
 
 } // namespace
@@ -364,28 +374,35 @@ fs::path find_romset_zip(const fs::path& dir) {
   return {};
 }
 
-fs::path prepare_rom_dir(const fs::path& zip_or_dir, const fs::path& out_dir) {
+fs::path prepare_rom_dir(const fs::path& zip_or_dir, const fs::path& out_dir, bool progress) {
   std::error_code ec;
   const fs::path src = fs::weakly_canonical(zip_or_dir, ec);
   if (fs::is_regular_file(src) && lower(src.extension().string()) == ".zip") {
     const fs::path extract_to = out_dir / "_mame_extract";
-    std::printf("Extracting %s\n", src.string().c_str());
+    emit_progress(progress, 0.10, "Extracting romset");
+    if (!progress)
+      std::printf("Extracting %s\n", src.string().c_str());
     extract_zip_windows(src, extract_to);
-    prepare_from_mame_files(index_dir(extract_to), out_dir);
-    // Drop loose extract after mapping so install stays small.
+    emit_progress(progress, 0.35, "Reading ROM files");
+    prepare_from_mame_files(index_dir(extract_to), out_dir, progress);
     fs::remove_all(extract_to, ec);
+    emit_progress(progress, 1.00, "Ready");
     return out_dir;
   }
   if (fs::is_directory(src)) {
-    if (is_prepared_rom_dir(src))
+    if (is_prepared_rom_dir(src)) {
+      emit_progress(progress, 1.00, "Already prepared");
       return src;
+    }
     if (detect_set(index_dir(src))) {
-      prepare_from_mame_files(index_dir(src), out_dir);
+      emit_progress(progress, 0.20, "Reading ROM folder");
+      prepare_from_mame_files(index_dir(src), out_dir, progress);
+      emit_progress(progress, 1.00, "Ready");
       return out_dir;
     }
     const fs::path nested_zip = find_romset_zip(src);
     if (!nested_zip.empty())
-      return prepare_rom_dir(nested_zip, out_dir);
+      return prepare_rom_dir(nested_zip, out_dir, progress);
   }
   throw Error("Not a Splatterhouse zip or ROM folder: " + zip_or_dir.string());
 }

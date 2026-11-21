@@ -17,8 +17,10 @@ std::filesystem::path find_romset_zip(const std::filesystem::path& dir);
 
 /// Build mapped images into `out_dir` from a MAME folder or `splatter*.zip`.
 /// Overwrites files in `out_dir`. Returns the prepared directory.
+/// When `progress` is true, prints RecompLauncher lines: `progress 0.4 Text`.
 std::filesystem::path prepare_rom_dir(const std::filesystem::path& zip_or_dir,
-                                      const std::filesystem::path& out_dir);
+                                      const std::filesystem::path& out_dir,
+                                      bool progress = false);
 
 /// Resolve a user path (zip, MAME folder, or prepared rom/) into a prepared
 /// rom directory under `out_dir` when needed, then load it.

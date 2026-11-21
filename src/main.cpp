@@ -52,6 +52,8 @@ static void usage(const char* argv0) {
       "Usage: %s [rom_path] [options]\n"
       "  rom_path          Prepared rom/ folder, MAME ROM folder, or splatter.zip\n"
       "                    (default: auto-find rom/ or splatter*.zip next to the exe)\n"
+      "  --game PATH       Same as rom_path (for launchers)\n"
+      "  --data PATH       Folder for options.cfg and prepared rom/ (RECOMPLAUNCHER_DATA)\n"
       "  --prepare [path]  Build rom/ from a zip or MAME folder, then exit\n"
       "  --headless        Null present/audio (CI / smoke)\n"
       "  --frames N        Run N frames then exit\n"
@@ -73,15 +75,37 @@ static fs::path exe_dir_of(const fs::path& argv0) {
   return fs::absolute(argv0, ec).parent_path();
 }
 
-static fs::path default_prepare_out(const fs::path& argv0) {
-  return exe_dir_of(argv0) / "rom";
+static bool take_path_arg(int& i, int argc, char** argv, const char* flag, fs::path& out) {
+  const size_t n = std::strlen(flag);
+  if (std::strncmp(argv[i], flag, n) != 0)
+    return false;
+  if (argv[i][n] == '=') {
+    out = argv[i] + n + 1;
+    return true;
+  }
+  if (argv[i][n] != '\0')
+    return false;
+  if (i + 1 >= argc || argv[i + 1][0] == '-')
+    throw sh::Error(std::string(flag) + " needs a path");
+  out = argv[++i];
+  return true;
 }
 
-static fs::path find_default_rom_source(const fs::path& argv0) {
+static fs::path resolve_data_dir(const fs::path& argv0, const fs::path& cli_data) {
+  if (!cli_data.empty())
+    return cli_data;
+  if (const char* env = std::getenv("RECOMPLAUNCHER_DATA")) {
+    if (env[0])
+      return env;
+  }
+  return exe_dir_of(argv0);
+}
+
+static fs::path find_default_rom_source(const fs::path& argv0, const fs::path& data_dir) {
   std::error_code ec;
   const fs::path exe_dir = exe_dir_of(argv0);
   const fs::path cwd = fs::current_path();
-  const fs::path dirs[] = {cwd, exe_dir, cwd.parent_path(), exe_dir.parent_path()};
+  const fs::path dirs[] = {data_dir, cwd, exe_dir, cwd.parent_path(), exe_dir.parent_path()};
 
   for (const auto& dir : dirs) {
     if (sh::is_prepared_rom_dir(dir / "rom"))
@@ -98,7 +122,7 @@ static fs::path find_default_rom_source(const fs::path& argv0) {
     if (sh::is_mame_rom_dir(dir))
       return fs::weakly_canonical(dir, ec);
   }
-  return cwd / "rom";
+  return data_dir / "rom";
 }
 
 int main(int argc, char** argv) {
@@ -107,99 +131,109 @@ int main(int argc, char** argv) {
   bool rom_path_set = false;
   bool prepare_only = false;
   fs::path rom_path;
+  fs::path cli_data;
   sh::MachineConfig cfg;
   cfg.headless = false;
   int frames = 0;
   bool cli_skip_checksum = false;
   bool cli_scale = false;
 
-  std::error_code path_ec;
-  const fs::path options_path =
-      fs::absolute(argv[0] ? argv[0] : "splatterhouse", path_ec).parent_path() / "options.cfg";
-  const sh::HostOptions saved = path_ec ? sh::HostOptions{} : sh::load_options(options_path);
-  cfg.options_path = options_path.string();
-
-  for (int i = 1; i < argc; ++i) {
-    if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
-      usage(argv[0]);
-      return 0;
-    }
-    if (std::strcmp(argv[i], "--prepare") == 0) {
-      prepare_only = true;
-      if (i + 1 < argc && argv[i + 1][0] != '-') {
-        rom_path = argv[++i];
+  try {
+    for (int i = 1; i < argc; ++i) {
+      if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
+        usage(argv[0]);
+        return 0;
+      }
+      if (std::strcmp(argv[i], "--prepare") == 0) {
+        prepare_only = true;
+        if (i + 1 < argc && argv[i + 1][0] != '-') {
+          rom_path = argv[++i];
+          rom_path_set = true;
+        }
+        continue;
+      }
+      if (take_path_arg(i, argc, argv, "--game", rom_path)) {
+        rom_path_set = true;
+        continue;
+      }
+      if (take_path_arg(i, argc, argv, "--data", cli_data))
+        continue;
+      if (std::strcmp(argv[i], "--headless") == 0) {
+        cfg.headless = true;
+        continue;
+      }
+      if (std::strcmp(argv[i], "--frames") == 0 && i + 1 < argc) {
+        frames = std::atoi(argv[++i]);
+        continue;
+      }
+      if (std::strcmp(argv[i], "--probe") == 0 && i + 1 < argc) {
+        frames = std::atoi(argv[++i]);
+        cfg.headless = true;
+        cfg.probe = true;
+        continue;
+      }
+      if (std::strcmp(argv[i], "--probe-out") == 0 && i + 1 < argc) {
+        cfg.probe_out = argv[++i];
+        continue;
+      }
+      if (std::strcmp(argv[i], "--coin-frame") == 0 && i + 1 < argc) {
+        cfg.coin_frame = std::atoi(argv[++i]);
+        continue;
+      }
+      if (std::strcmp(argv[i], "--start-frame") == 0 && i + 1 < argc) {
+        cfg.start_frame = std::atoi(argv[++i]);
+        continue;
+      }
+      if (std::strcmp(argv[i], "--input-hold") == 0 && i + 1 < argc) {
+        cfg.input_hold_frames = std::atoi(argv[++i]);
+        continue;
+      }
+      if (std::strcmp(argv[i], "--right-frame") == 0 && i + 1 < argc) {
+        cfg.right_frame = std::atoi(argv[++i]);
+        continue;
+      }
+      if (std::strcmp(argv[i], "--right-hold") == 0 && i + 1 < argc) {
+        cfg.right_hold_frames = std::atoi(argv[++i]);
+        continue;
+      }
+      if (std::strcmp(argv[i], "--trace-main") == 0 && i + 1 < argc) {
+        cfg.trace_main = true;
+        cfg.max_main_steps = std::strtoull(argv[++i], nullptr, 10);
+        cfg.headless = true;
+        continue;
+      }
+      if (std::strcmp(argv[i], "--scale") == 0 && i + 1 < argc) {
+        cfg.scale = std::atoi(argv[++i]);
+        cli_scale = true;
+        continue;
+      }
+      if (std::strcmp(argv[i], "--skip-checksum") == 0) {
+        cli_skip_checksum = true;
+        continue;
+      }
+      if (argv[i][0] != '-') {
+        rom_path = argv[i];
         rom_path_set = true;
       }
-      continue;
     }
-    if (std::strcmp(argv[i], "--headless") == 0) {
-      cfg.headless = true;
-      continue;
-    }
-    if (std::strcmp(argv[i], "--frames") == 0 && i + 1 < argc) {
-      frames = std::atoi(argv[++i]);
-      continue;
-    }
-    if (std::strcmp(argv[i], "--probe") == 0 && i + 1 < argc) {
-      frames = std::atoi(argv[++i]);
-      cfg.headless = true;
-      cfg.probe = true;
-      continue;
-    }
-    if (std::strcmp(argv[i], "--probe-out") == 0 && i + 1 < argc) {
-      cfg.probe_out = argv[++i];
-      continue;
-    }
-    if (std::strcmp(argv[i], "--coin-frame") == 0 && i + 1 < argc) {
-      cfg.coin_frame = std::atoi(argv[++i]);
-      continue;
-    }
-    if (std::strcmp(argv[i], "--start-frame") == 0 && i + 1 < argc) {
-      cfg.start_frame = std::atoi(argv[++i]);
-      continue;
-    }
-    if (std::strcmp(argv[i], "--input-hold") == 0 && i + 1 < argc) {
-      cfg.input_hold_frames = std::atoi(argv[++i]);
-      continue;
-    }
-    if (std::strcmp(argv[i], "--right-frame") == 0 && i + 1 < argc) {
-      cfg.right_frame = std::atoi(argv[++i]);
-      continue;
-    }
-    if (std::strcmp(argv[i], "--right-hold") == 0 && i + 1 < argc) {
-      cfg.right_hold_frames = std::atoi(argv[++i]);
-      continue;
-    }
-    if (std::strcmp(argv[i], "--trace-main") == 0 && i + 1 < argc) {
-      cfg.trace_main = true;
-      cfg.max_main_steps = std::strtoull(argv[++i], nullptr, 10);
-      cfg.headless = true;
-      continue;
-    }
-    if (std::strcmp(argv[i], "--scale") == 0 && i + 1 < argc) {
-      cfg.scale = std::atoi(argv[++i]);
-      cli_scale = true;
-      continue;
-    }
-    if (std::strcmp(argv[i], "--skip-checksum") == 0) {
-      cli_skip_checksum = true;
-      continue;
-    }
-    if (argv[i][0] != '-') {
-      rom_path = argv[i];
-      rom_path_set = true;
-    }
-  }
 
-  if (!rom_path_set)
-    rom_path = find_default_rom_source(argv[0] ? argv[0] : "splatterhouse");
+    const fs::path data_dir = resolve_data_dir(argv[0] ? argv[0] : "splatterhouse", cli_data);
+    std::error_code path_ec;
+    fs::create_directories(data_dir, path_ec);
+    const fs::path options_path = data_dir / "options.cfg";
+    const sh::HostOptions saved = sh::load_options(options_path);
+    cfg.options_path = options_path.string();
 
-  const fs::path prepare_out = default_prepare_out(argv[0] ? argv[0] : "splatterhouse");
+    if (!rom_path_set)
+      rom_path = find_default_rom_source(argv[0] ? argv[0] : "splatterhouse", data_dir);
 
-  try {
+    const fs::path prepare_out = data_dir / "rom";
+
     if (prepare_only) {
-      const fs::path out = sh::prepare_rom_dir(rom_path, prepare_out);
-      std::printf("Ready: %s\n", (out / "mainrom.bin").string().c_str());
+      const bool from_launcher = std::getenv("RECOMPLAUNCHER") != nullptr;
+      const fs::path out = sh::prepare_rom_dir(rom_path, prepare_out, from_launcher);
+      if (!from_launcher)
+        std::printf("Ready: %s\n", (out / "mainrom.bin").string().c_str());
       return 0;
     }
     if (cfg.input_hold_frames < 1)
