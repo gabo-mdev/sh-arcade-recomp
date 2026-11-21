@@ -84,6 +84,7 @@ python tools/extract_rom.py splatter.zip
 .\build.ps1
 
 .\build\splatterhouse.exe
+# Smoke test only (no window): run 5 frames with null backends, then exit
 .\build\splatterhouse.exe --headless --frames 5
 ```
 
@@ -95,6 +96,8 @@ prompt. A normal PowerShell lacks MSVC include paths (`cstdint` not found).
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSH_HOST_SDL=ON
 cmake --build build --parallel
+./build/splatterhouse
+# Smoke test only (no window): run 5 frames with null backends, then exit
 ./build/splatterhouse --headless --frames 5
 ```
 
