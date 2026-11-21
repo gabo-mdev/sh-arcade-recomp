@@ -2,11 +2,11 @@
   "$schema": "https://recomplauncher.com/schema/recomplauncher.json",
   "format": 1,
   "name": "Splatterhouse",
-  "repo": "gabomarin/splatterrecomp",
+  "repo": "tarkovopsapp/sh-arcade-recomp",
   "inputs": [
     {
       "id": "romset",
-      "label": "Your MAME Splatterhouse romset: splatter.zip (World / SH3 preferred), or a folder of its ROM files. splatter2.zip and splatterj.zip also work.",
+      "label": "Your MAME Splatterhouse romset: splatter.zip (World / SH3), or a folder of its ROM files.",
       "role": "game",
       "formats": [
         { "type": "file", "extensions": ["zip"] },
@@ -161,6 +161,6 @@
   },
   "saves": ["{data}/options.cfg"],
   "exit_codes": {
-    "1": "Setup or launch failed. Check that your romset is a MAME Splatterhouse set (splatter / splatter2 / splatterj)."
+    "1": "Setup or launch failed. Check that your romset is the MAME World SH3 set (splatter.zip)."
   }
 }

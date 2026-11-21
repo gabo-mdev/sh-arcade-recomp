@@ -31,58 +31,22 @@ struct SetInfo {
   std::pair<const char*, u32> extra[4];
 };
 
-constexpr SetInfo kSets[] = {
-    {
-        "splatter",
-        "World, new version (SH3)",
-        "sh1_snd0b.bin",
-        {{"sh1_prg0.bin", 0x000000},
-         {"sh1_prg1.bin", 0x080000},
-         {"sh1_prg2.bin", 0x100000},
-         {"sh1_prg3.bin", 0x180000},
-         {"sh1_prg4.bin", 0x200000},
-         {"sh3_prg5.bin", 0x280000},
-         {"sh3_prg6.bin", 0x300000},
-         {"sh3_prg7.bin", 0x380000}},
-        {{"sh3_prg5.bin", 0x10000},
-         {"sh3_prg6.bin", 0x10000},
-         {"sh3_prg7.bin", 0x10000},
-         {"sh1_snd0b.bin", 0x10000}},
-    },
-    {
-        "splatter2",
-        "World, old version (SH2)",
-        "sh1_snd0.bin",
-        {{"sh1_prg0.bin", 0x000000},
-         {"sh1_prg1.bin", 0x080000},
-         {"sh1_prg2.bin", 0x100000},
-         {"sh1_prg3.bin", 0x180000},
-         {"sh1_prg4.bin", 0x200000},
-         {"sh1_prg5.bin", 0x280000},
-         {"sh2_prg6.bin", 0x300000},
-         {"sh2_prg7.bin", 0x380000}},
-        {{"sh1_prg5.bin", 0x10000},
-         {"sh2_prg6.bin", 0x10000},
-         {"sh2_prg7.bin", 0x10000},
-         {"sh1_snd0.bin", 0x10000}},
-    },
-    {
-        "splatterj",
-        "Japan (SH1)",
-        "sh1_snd0.bin",
-        {{"sh1_prg0.bin", 0x000000},
-         {"sh1_prg1.bin", 0x080000},
-         {"sh1_prg2.bin", 0x100000},
-         {"sh1_prg3.bin", 0x180000},
-         {"sh1_prg4.bin", 0x200000},
-         {"sh1_prg5.bin", 0x280000},
-         {"sh1_prg6.bin", 0x300000},
-         {"sh1_prg7.bin", 0x380000}},
-        {{"sh1_prg5.bin", 0x10000},
-         {"sh1_prg6.bin", 0x10000},
-         {"sh1_prg7.bin", 0x10000},
-         {"sh1_snd0.bin", 0x10000}},
-    },
+constexpr SetInfo kSplatter{
+    "splatter",
+    "World, new version (SH3)",
+    "sh1_snd0b.bin",
+    {{"sh1_prg0.bin", 0x000000},
+     {"sh1_prg1.bin", 0x080000},
+     {"sh1_prg2.bin", 0x100000},
+     {"sh1_prg3.bin", 0x180000},
+     {"sh1_prg4.bin", 0x200000},
+     {"sh3_prg5.bin", 0x280000},
+     {"sh3_prg6.bin", 0x300000},
+     {"sh3_prg7.bin", 0x380000}},
+    {{"sh3_prg5.bin", 0x10000},
+     {"sh3_prg6.bin", 0x10000},
+     {"sh3_prg7.bin", 0x10000},
+     {"sh1_snd0b.bin", 0x10000}},
 };
 
 constexpr std::pair<const char*, u32> kCommon[] = {
@@ -128,13 +92,11 @@ fs::path require_file(const FileMap& files, const char* name) {
 }
 
 const SetInfo* detect_set(const FileMap& files) {
+  // Only the complete World SH3 set (splatter.zip) is supported for now.
   if (has_file(files, "sh3_prg5.bin") && has_file(files, "sh3_prg6.bin") &&
-      has_file(files, "sh3_prg7.bin") && has_file(files, "sh1_snd0b.bin"))
-    return &kSets[0];
-  if (has_file(files, "sh2_prg6.bin") && has_file(files, "sh2_prg7.bin"))
-    return &kSets[1];
-  if (has_file(files, "sh1_prg6.bin") && has_file(files, "sh1_prg7.bin"))
-    return &kSets[2];
+      has_file(files, "sh3_prg7.bin") && has_file(files, "sh1_snd0b.bin") &&
+      has_file(files, "sh1_prg0.bin") && has_file(files, "cus64-64a1.mcu"))
+    return &kSplatter;
   return nullptr;
 }
 
@@ -216,10 +178,8 @@ void clear_dir_files(const fs::path& dir) {
 void extract_zip_windows(const fs::path& zip, const fs::path& dest) {
   fs::create_directories(dest);
   clear_dir_files(dest);
-  // Expand-Archive is available on Windows 10+ and needs no extra deps.
-  std::wstring zip_w = zip.wstring();
-  std::wstring dest_w = dest.wstring();
-  // Escape single quotes for PowerShell single-quoted strings.
+  // Prefer tar (fast); fall back to .NET ZipFile. Avoid Expand-Archive — it hangs
+  // easily on many small ROM files when launched with CREATE_NO_WINDOW.
   auto ps_quote = [](std::wstring s) {
     std::wstring out;
     out.reserve(s.size() + 8);
@@ -231,26 +191,37 @@ void extract_zip_windows(const fs::path& zip, const fs::path& dest) {
     }
     return out;
   };
-  std::wstring cmd = L"powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
-                     L"Expand-Archive -LiteralPath '" +
-                     ps_quote(zip_w) + L"' -DestinationPath '" + ps_quote(dest_w) +
-                     L"' -Force";
-  STARTUPINFOW si{};
-  si.cb = sizeof(si);
-  PROCESS_INFORMATION pi{};
-  std::vector<wchar_t> mutable_cmd(cmd.begin(), cmd.end());
-  mutable_cmd.push_back(0);
-  if (!CreateProcessW(nullptr, mutable_cmd.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW,
-                      nullptr, nullptr, &si, &pi)) {
-    throw Error("Failed to start PowerShell to extract " + zip.string());
+  auto run_hidden = [](std::wstring cmd) -> DWORD {
+    STARTUPINFOW si{};
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi{};
+    std::vector<wchar_t> mutable_cmd(cmd.begin(), cmd.end());
+    mutable_cmd.push_back(0);
+    if (!CreateProcessW(nullptr, mutable_cmd.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW,
+                        nullptr, nullptr, &si, &pi))
+      return 0xFFFFFFFFu;
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD code = 1;
+    GetExitCodeProcess(pi.hProcess, &code);
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    return code;
+  };
+
+  const std::wstring zip_w = zip.wstring();
+  const std::wstring dest_w = dest.wstring();
+  const std::wstring tar_cmd = L"tar.exe -xf \"" + zip_w + L"\" -C \"" + dest_w + L"\"";
+  DWORD code = run_hidden(tar_cmd);
+  if (code != 0) {
+    const std::wstring ps_cmd =
+        L"powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+        L"Add-Type -AssemblyName System.IO.Compression.FileSystem; "
+        L"[IO.Compression.ZipFile]::ExtractToDirectory('" +
+        ps_quote(zip_w) + L"', '" + ps_quote(dest_w) + L"')";
+    code = run_hidden(ps_cmd);
+    if (code != 0)
+      throw Error("Zip extract failed for " + zip.string());
   }
-  WaitForSingleObject(pi.hProcess, INFINITE);
-  DWORD code = 1;
-  GetExitCodeProcess(pi.hProcess, &code);
-  CloseHandle(pi.hThread);
-  CloseHandle(pi.hProcess);
-  if (code != 0)
-    throw Error("Expand-Archive failed for " + zip.string());
 
   // Some zips nest files one folder deep — flatten one level if needed.
   FileMap files = index_dir(dest);
@@ -274,7 +245,7 @@ void extract_zip_windows(const fs::path& zip, const fs::path& dest) {
 }
 #else
 void extract_zip_windows(const fs::path&, const fs::path&) {
-  throw Error("Zip extraction requires Windows Expand-Archive, or pass an extracted folder");
+  throw Error("Zip extraction requires Windows tar/.NET ZipFile, or pass an extracted folder");
 }
 #endif
 
@@ -337,8 +308,8 @@ void prepare_from_mame_files(const FileMap& files, const fs::path& out_dir, bool
   const SetInfo* set = detect_set(files);
   if (!set)
     throw Error(
-        "Could not detect Splatterhouse set. Need SH3 (sh3_prg*), SH2 (sh2_prg*), or SH1 "
-        "(sh1_prg6/7).");
+        "Need the complete MAME World SH3 romset (splatter.zip). "
+        "Clones splatter2.zip / splatterj.zip are not supported yet.");
   emit_progress(progress, 0.45, "Checking ROM files");
   validate(files, *set);
   fs::create_directories(out_dir);
@@ -365,19 +336,20 @@ bool is_mame_rom_dir(const fs::path& dir) {
 }
 
 fs::path find_romset_zip(const fs::path& dir) {
-  static const char* names[] = {"splatter.zip", "splatter2.zip", "splatterj.zip"};
-  for (const char* name : names) {
-    const fs::path p = dir / name;
-    if (fs::is_regular_file(p))
-      return p;
-  }
-  return {};
+  const fs::path p = dir / "splatter.zip";
+  return fs::is_regular_file(p) ? p : fs::path{};
 }
 
 fs::path prepare_rom_dir(const fs::path& zip_or_dir, const fs::path& out_dir, bool progress) {
   std::error_code ec;
   const fs::path src = fs::weakly_canonical(zip_or_dir, ec);
   if (fs::is_regular_file(src) && lower(src.extension().string()) == ".zip") {
+    const std::string zip_name = lower(src.filename().string());
+    if (zip_name == "splatter2.zip" || zip_name == "splatterj.zip") {
+      throw Error(
+          src.filename().string() +
+          " is a MAME clone (incomplete). Use the full World SH3 set: splatter.zip.");
+    }
     const fs::path extract_to = out_dir / "_mame_extract";
     emit_progress(progress, 0.10, "Extracting romset");
     if (!progress)
@@ -394,9 +366,10 @@ fs::path prepare_rom_dir(const fs::path& zip_or_dir, const fs::path& out_dir, bo
       emit_progress(progress, 1.00, "Already prepared");
       return src;
     }
-    if (detect_set(index_dir(src))) {
+    const FileMap files = index_dir(src);
+    if (detect_set(files)) {
       emit_progress(progress, 0.20, "Reading ROM folder");
-      prepare_from_mame_files(index_dir(src), out_dir, progress);
+      prepare_from_mame_files(files, out_dir, progress);
       emit_progress(progress, 1.00, "Ready");
       return out_dir;
     }
@@ -404,7 +377,9 @@ fs::path prepare_rom_dir(const fs::path& zip_or_dir, const fs::path& out_dir, bo
     if (!nested_zip.empty())
       return prepare_rom_dir(nested_zip, out_dir, progress);
   }
-  throw Error("Not a Splatterhouse zip or ROM folder: " + zip_or_dir.string());
+  throw Error(
+      "Need splatter.zip (MAME World SH3) or a folder with its full ROM set: " +
+      zip_or_dir.string());
 }
 
 RomSet load_rom_path(const fs::path& path, const fs::path& prepare_out) {

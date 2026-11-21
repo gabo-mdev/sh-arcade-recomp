@@ -4,11 +4,10 @@
 
 | MAME name | Label | Program chips |
 |-----------|-------|---------------|
-| `splatter` | World SH3 (preferred) | `sh1_prg0..4` + `sh3_prg5..7` |
-| `splatter2` | World SH2 | `sh1_prg0..5` + `sh2_prg6..7` |
-| `splatterj` | Japan SH1 | `sh1_prg0..7` |
+| `splatter` | World SH3 | `sh1_prg0..4` + `sh3_prg5..7` |
 
-Your folder currently holds the **SH3** set (`sh3_prg5/6/7`, `sh1_snd0b.bin`).
+Only the complete parent set (`splatter.zip`) is accepted for now. MAME clones
+`splatter2` (SH2) and `splatterj` (Japan) are not supported yet.
 
 ## Shared assets
 
@@ -16,7 +15,7 @@ Your folder currently holds the **SH3** set (`sh3_prg5/6/7`, `sh1_snd0b.bin`).
 - Voice: `sh_voi-0..3.bin`
 - Tiles: `sh_chr-0..5.bin`, mask `sh_chr-8.bin`
 - Sprites: `sh_obj-0..7.bin`
-- Sound: `sh1_snd0b.bin` (SH3) or `sh1_snd0.bin` (older) + `sh1_snd1.bin`
+- Sound: `sh1_snd0b.bin` + `sh1_snd1.bin`
 
 ## Protection
 

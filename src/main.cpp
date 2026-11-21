@@ -51,7 +51,7 @@ static void usage(const char* argv0) {
   std::printf(
       "Usage: %s [rom_path] [options]\n"
       "  rom_path          Prepared rom/ folder, MAME ROM folder, or splatter.zip\n"
-      "                    (default: auto-find rom/ or splatter*.zip next to the exe)\n"
+      "                    (default: auto-find rom/ or splatter.zip next to the exe)\n"
       "  --game PATH       Same as rom_path (for launchers)\n"
       "  --data PATH       Folder for options.cfg and prepared rom/ (RECOMPLAUNCHER_DATA)\n"
       "  --prepare [path]  Build rom/ from a zip or MAME folder, then exit\n"

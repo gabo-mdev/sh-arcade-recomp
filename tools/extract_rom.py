@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract and validate a Splatterhouse MAME romset into rom/."""
+"""Extract and validate a Splatterhouse MAME World SH3 romset (splatter.zip) into rom/."""
 
 from __future__ import annotations
 
@@ -43,66 +43,25 @@ REQUIRED_COMMON = {
     "sh1_prg4.bin": 0x10000,
 }
 
-SETS = {
-    "splatter": {
-        "desc": "World, new version (SH3)",
-        "prg": [
-            ("sh1_prg0.bin", 0x000000),
-            ("sh1_prg1.bin", 0x080000),
-            ("sh1_prg2.bin", 0x100000),
-            ("sh1_prg3.bin", 0x180000),
-            ("sh1_prg4.bin", 0x200000),
-            ("sh3_prg5.bin", 0x280000),
-            ("sh3_prg6.bin", 0x300000),
-            ("sh3_prg7.bin", 0x380000),
-        ],
-        "snd0": "sh1_snd0b.bin",
-        "extra": {
-            "sh3_prg5.bin": 0x10000,
-            "sh3_prg6.bin": 0x10000,
-            "sh3_prg7.bin": 0x10000,
-            "sh1_snd0b.bin": 0x10000,
-        },
-    },
-    "splatter2": {
-        "desc": "World, old version (SH2)",
-        "prg": [
-            ("sh1_prg0.bin", 0x000000),
-            ("sh1_prg1.bin", 0x080000),
-            ("sh1_prg2.bin", 0x100000),
-            ("sh1_prg3.bin", 0x180000),
-            ("sh1_prg4.bin", 0x200000),
-            ("sh1_prg5.bin", 0x280000),
-            ("sh2_prg6.bin", 0x300000),
-            ("sh2_prg7.bin", 0x380000),
-        ],
-        "snd0": "sh1_snd0.bin",
-        "extra": {
-            "sh1_prg5.bin": 0x10000,
-            "sh2_prg6.bin": 0x10000,
-            "sh2_prg7.bin": 0x10000,
-            "sh1_snd0.bin": 0x10000,
-        },
-    },
-    "splatterj": {
-        "desc": "Japan (SH1)",
-        "prg": [
-            ("sh1_prg0.bin", 0x000000),
-            ("sh1_prg1.bin", 0x080000),
-            ("sh1_prg2.bin", 0x100000),
-            ("sh1_prg3.bin", 0x180000),
-            ("sh1_prg4.bin", 0x200000),
-            ("sh1_prg5.bin", 0x280000),
-            ("sh1_prg6.bin", 0x300000),
-            ("sh1_prg7.bin", 0x380000),
-        ],
-        "snd0": "sh1_snd0.bin",
-        "extra": {
-            "sh1_prg5.bin": 0x10000,
-            "sh1_prg6.bin": 0x10000,
-            "sh1_prg7.bin": 0x10000,
-            "sh1_snd0.bin": 0x10000,
-        },
+SET = {
+    "name": "splatter",
+    "desc": "World, new version (SH3)",
+    "prg": [
+        ("sh1_prg0.bin", 0x000000),
+        ("sh1_prg1.bin", 0x080000),
+        ("sh1_prg2.bin", 0x100000),
+        ("sh1_prg3.bin", 0x180000),
+        ("sh1_prg4.bin", 0x200000),
+        ("sh3_prg5.bin", 0x280000),
+        ("sh3_prg6.bin", 0x300000),
+        ("sh3_prg7.bin", 0x380000),
+    ],
+    "snd0": "sh1_snd0b.bin",
+    "extra": {
+        "sh3_prg5.bin": 0x10000,
+        "sh3_prg6.bin": 0x10000,
+        "sh3_prg7.bin": 0x10000,
+        "sh1_snd0b.bin": 0x10000,
     },
 }
 
@@ -115,46 +74,43 @@ def sha1_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def detect_set(names: set[str]) -> str:
-    if {"sh3_prg5.bin", "sh3_prg6.bin", "sh3_prg7.bin", "sh1_snd0b.bin"} <= names:
-        return "splatter"
-    if {"sh2_prg6.bin", "sh2_prg7.bin"} <= names:
-        return "splatter2"
-    if {"sh1_prg6.bin", "sh1_prg7.bin"} <= names:
-        return "splatterj"
-    raise SystemExit(
-        "Could not detect set. Need SH3 (sh3_prg*), SH2 (sh2_prg*), or SH1 (sh1_prg6/7)."
-    )
+def detect_sh3(names: set[str]) -> None:
+    need = {
+        "sh3_prg5.bin",
+        "sh3_prg6.bin",
+        "sh3_prg7.bin",
+        "sh1_snd0b.bin",
+        "sh1_prg0.bin",
+        "cus64-64a1.mcu",
+    }
+    if not need <= names:
+        raise SystemExit(
+            "Need the complete MAME World SH3 romset (splatter.zip). "
+            "Clones splatter2.zip / splatterj.zip are not supported yet."
+        )
 
 
 def extract_zip(zip_path: Path, dest: Path) -> set[str]:
     dest.mkdir(parents=True, exist_ok=True)
-    names: set[str] = set()
     with zipfile.ZipFile(zip_path) as zf:
         for info in zf.infolist():
             if info.is_dir():
                 continue
-            name = Path(info.filename).name.lower()
-            # keep original casing from archive basename when possible
             raw = Path(info.filename).name
             out = dest / raw
             with zf.open(info) as src, out.open("wb") as dst:
                 shutil.copyfileobj(src, dst)
-            names.add(raw.lower())
-            names.add(raw)
-    # normalize to actual files on disk
     return {p.name for p in dest.iterdir() if p.is_file()}
 
 
-def validate(files: dict[str, Path], set_name: str) -> None:
+def validate(files: dict[str, Path]) -> None:
     expected = dict(REQUIRED_COMMON)
-    expected.update(SETS[set_name]["extra"])
+    expected.update(SET["extra"])
     missing = []
     wrong = []
     for name, size in expected.items():
         path = files.get(name)
         if path is None:
-            # case-insensitive fallback
             path = next((p for n, p in files.items() if n.lower() == name.lower()), None)
         if path is None:
             missing.append(name)
@@ -188,7 +144,7 @@ def apply_prg7_bit16_swap(mainrom: bytearray) -> None:
             mainrom[i], mainrom[j] = mainrom[j], mainrom[i]
 
 
-def build_images(rom_dir: Path, set_name: str, files: dict[str, Path]) -> None:
+def build_images(rom_dir: Path, files: dict[str, Path]) -> None:
     def find(name: str) -> Path:
         if name in files:
             return files[name]
@@ -198,13 +154,13 @@ def build_images(rom_dir: Path, set_name: str, files: dict[str, Path]) -> None:
         raise SystemExit(f"Missing {name}")
 
     mainrom = bytearray(0x400000)
-    for name, start in SETS[set_name]["prg"]:
+    for name, start in SET["prg"]:
         load512(mainrom, find(name), start)
     apply_prg7_bit16_swap(mainrom)
     (rom_dir / "mainrom.bin").write_bytes(mainrom)
 
     snd = bytearray()
-    snd += find(SETS[set_name]["snd0"]).read_bytes()
+    snd += find(SET["snd0"]).read_bytes()
     snd += find("sh1_snd1.bin").read_bytes()
     (rom_dir / "audiocpu.bin").write_bytes(snd)
 
@@ -228,8 +184,8 @@ def build_images(rom_dir: Path, set_name: str, files: dict[str, Path]) -> None:
 
     meta = rom_dir / "set.txt"
     meta.write_text(
-        f"set={set_name}\n"
-        f"desc={SETS[set_name]['desc']}\n"
+        f"set={SET['name']}\n"
+        f"desc={SET['desc']}\n"
         f"mainrom_sha1={hashlib.sha1(mainrom).hexdigest()}\n",
         encoding="utf-8",
     )
@@ -241,7 +197,7 @@ def main() -> int:
         "zip_or_dir",
         nargs="?",
         default=str(ROOT / "splatter.zip"),
-        help="Path to splatter.zip or an already-extracted directory",
+        help="Path to splatter.zip or an already-extracted SH3 directory",
     )
     ap.add_argument("-o", "--out", type=Path, default=ROM_DIR)
     args = ap.parse_args()
@@ -255,8 +211,15 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
 
     if src.is_file() and src.suffix.lower() == ".zip":
+        name = src.name.lower()
+        if name in ("splatter2.zip", "splatterj.zip"):
+            raise SystemExit(
+                f"{src.name} is a MAME clone (incomplete). "
+                "Use the full World SH3 set: splatter.zip."
+            )
         print(f"Extracting {src} -> {out}")
-        names = extract_zip(src, out)
+        extract_zip(src, out)
+        names = {p.name for p in out.iterdir() if p.is_file()}
     elif src.is_dir():
         print(f"Copying files from {src} -> {out}")
         for p in src.iterdir():
@@ -267,10 +230,10 @@ def main() -> int:
         raise SystemExit(f"Not found: {src}")
 
     files = {p.name: p for p in out.iterdir() if p.is_file()}
-    set_name = detect_set({n.lower() for n in names})
-    print(f"Detected set: {set_name} ({SETS[set_name]['desc']})")
-    validate(files, set_name)
-    build_images(out, set_name, files)
+    detect_sh3({n.lower() for n in names})
+    print(f"Detected set: {SET['name']} ({SET['desc']})")
+    validate(files)
+    build_images(out, files)
     print("Wrote:")
     for name in (
         "mainrom.bin",

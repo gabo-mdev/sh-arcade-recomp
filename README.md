@@ -9,15 +9,15 @@ This is **not** the Xbox 360 (2010) recomp. It targets the arcade board.
 
 ## How to play
 
-1. Install from [RecompLauncher](https://recomplauncher.com) (once listed) or a [GitHub Release](https://github.com/gabomarin/splatterrecomp/releases).
-2. Point Easy Setup at your MAME `splatter.zip` (World / SH3 preferred), or a folder of its ROM files.
+1. Install from [RecompLauncher](https://recomplauncher.com) (once listed) or a [GitHub Release](https://github.com/tarkovopsapp/sh-arcade-recomp/releases).
+2. Point Easy Setup at your MAME `splatter.zip` (World / SH3), or a folder of its ROM files.
 3. Press Play. Escape opens in-game options; language defaults to English (Spanish available).
 
 ## Player quick start (Windows x64)
 
 1. Grab a release zip (or build from source below).
 2. Put your MAME romset next to `splatterhouse.exe` as `splatter.zip`
-   (World / SH3 preferred; `splatter2.zip` and `splatterj.zip` also work).
+   (World / SH3). Clones `splatter2.zip` / `splatterj.zip` are not supported yet.
 3. Run `splatterhouse.exe`.
 
 On first launch the exe extracts and maps the romset into a local `rom/`
@@ -58,7 +58,7 @@ Still open on the hybrid plan:
 ## Requirements (players)
 
 - Windows 10/11 x64
-- Your own MAME Splatterhouse romset (`splatter` / `splatter2` / `splatterj`)
+- Your own MAME Splatterhouse romset (`splatter.zip`, World / SH3)
 
 ## Requirements (developers)
 
