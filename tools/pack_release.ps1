@@ -16,7 +16,7 @@ if (-not (Test-Path $Exe)) {
   throw "Missing $Exe — build first (.\build.ps1)."
 }
 
-$stageName = "Splatterhouse-Arcade-v$Version-Windows-x64"
+$stageName = "sh-arcade-recomp-v$Version-windows-x64"
 $stage = Join-Path $Root (Join-Path $OutDir $stageName)
 $zip = Join-Path $Root (Join-Path $OutDir "$stageName.zip")
 

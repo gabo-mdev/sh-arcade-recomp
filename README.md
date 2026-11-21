@@ -111,8 +111,13 @@ python tools/transpile.py    # -> src/gen/main_recomp.cpp (gitignored)
 
 ## Releases
 
-Tag `v*` (for example `v0.1.0`) to run GitHub Actions: Windows x64 zip and an
-experimental Linux x64 tarball attach to the release. Local packing:
+Tag `v*` (for example `v0.1.0`) to run GitHub Actions. Artifacts use the repo
+codename (not the game title):
+
+- `sh-arcade-recomp-v*-windows-x64.zip`
+- `sh-arcade-recomp-v*-linux-x64.tar.gz` (experimental)
+
+Local packing:
 
 ```powershell
 .\tools\pack_release.ps1 -Version 0.1.0

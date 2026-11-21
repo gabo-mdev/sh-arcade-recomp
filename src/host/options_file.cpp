@@ -86,8 +86,11 @@ void apply_line(HostOptions& options, const std::string& key, const std::string&
 HostOptions load_options(const std::filesystem::path& path) {
   HostOptions options;
   std::ifstream in(path);
-  if (!in)
+  if (!in) {
+    // First launch (or deleted file): write defaults so users can edit them.
+    save_options(path, options);
     return options;
+  }
   std::string line;
   bool saw_filter = false;
   while (std::getline(in, line)) {

@@ -13,7 +13,7 @@ if [[ ! -f "$EXE" ]]; then
   exit 1
 fi
 
-STAGE_NAME="Splatterhouse-Arcade-v${VERSION}-Linux-x64"
+STAGE_NAME="sh-arcade-recomp-v${VERSION}-linux-x64"
 STAGE="${OUT_DIR}/${STAGE_NAME}"
 TAR="${OUT_DIR}/${STAGE_NAME}.tar.gz"
 

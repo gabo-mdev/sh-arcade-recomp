@@ -6,7 +6,8 @@
 
 namespace sh {
 
-/// Missing file or unreadable lines keep the defaults. Unknown keys are ignored.
+/// Loads host options. If the file is missing, writes a default `options.cfg`
+/// and returns those defaults. Unreadable lines / unknown keys are ignored.
 HostOptions load_options(const std::filesystem::path& path);
 
 /// Writes the host switches. `dirty` is not stored. Returns false if the file

@@ -46,7 +46,7 @@ struct IAudioBackend {
 /// Switches here are live: the next emulated frame reads them.
 struct HostOptions {
   bool stage_select = false; // DIP SW3 On: Start opens the stage menu
-  bool skip_checksum = false; // Uncap POST until the title; do not skip the sum
+  bool skip_checksum = true; // Uncap POST until the title; do not skip the sum
   bool invincible = false;    // Keep the player's hearts full during play
   bool untouchable = false;   // Ignore contact: no recoil and no lost hearts
   bool uncap_fps = false;     // Drop the 60 Hz cap and vsync

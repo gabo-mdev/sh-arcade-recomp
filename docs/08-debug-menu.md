@@ -6,8 +6,9 @@ then open it with F1 (or the gamepad).
 
 ## How to enable
 
-1. Run the game once so it creates `options.cfg` next to the executable
-   (or under `--data` / `RECOMPLAUNCHER_DATA` if you set a data folder).
+1. Launch once (or any run that loads options). The exe creates `options.cfg`
+   next to the executable with defaults if the file is missing (or under
+   `--data` / `RECOMPLAUNCHER_DATA` if you set a data folder).
 2. Quit, open `options.cfg` in a text editor, and set:
 
 ```text
@@ -46,8 +47,8 @@ Escape menu language setting.
 
 ## Defaults
 
-All of the flags above default to **off** (`0`) in a fresh `options.cfg`.
-`debug_menu` itself also defaults to `0`.
+In a fresh `options.cfg`, **Fast boot** (`skip_checksum`) defaults to **on**
+(`1`). The other Game cheats and `debug_menu` default to **off** (`0`).
 
 ## Notes
 

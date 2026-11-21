@@ -43,7 +43,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-x64
-          path: dist/Splatterhouse-Arcade-v*-Windows-x64.zip
+          path: dist/sh-arcade-recomp-v*-windows-x64.zip
 
   linux:
     runs-on: ubuntu-24.04
@@ -83,7 +83,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-x64
-          path: dist/Splatterhouse-Arcade-v*-Linux-x64.tar.gz
+          path: dist/sh-arcade-recomp-v*-linux-x64.tar.gz
 
   publish:
     needs: [windows, linux]
@@ -116,7 +116,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
-          name: Splatterhouse Arcade ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.tag }}
           generate_release_notes: true
           files: artifacts/*
           fail_on_unmatched_files: false
