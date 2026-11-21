@@ -31,6 +31,7 @@ analysis/
 disasm/
 ref/
 build/
+build-wsl/
 cfg/
 nvram/
 snap/

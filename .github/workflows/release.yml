@@ -59,6 +59,7 @@ jobs:
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev \
             libwayland-dev libxkbcommon-dev libdrm-dev libgbm-dev \
             libdbus-1-dev libibus-1.0-dev \
+            libfontconfig-dev \
             unzip
 
       - name: Build

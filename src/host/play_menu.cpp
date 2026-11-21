@@ -19,6 +19,8 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#elif defined(SH_HAS_FONTCONFIG)
+#include <fontconfig/fontconfig.h>
 #endif
 
 namespace sh {
@@ -437,28 +439,79 @@ int clamp_int(int value, int lo, int hi) {
 // FreeType keeps a pointer at these bytes for the life of the menu.
 std::vector<Rml::byte> ui_font_bytes;
 
+bool load_ui_font_file(const std::string& path) {
+  std::ifstream in(path, std::ios::binary);
+  if (!in)
+    return false;
+  in.seekg(0, std::ios::end);
+  const auto size = in.tellg();
+  if (size <= 0)
+    return false;
+  in.seekg(0, std::ios::beg);
+  ui_font_bytes.resize(static_cast<size_t>(size));
+  in.read(reinterpret_cast<char*>(ui_font_bytes.data()), size);
+  if (!in)
+    return false;
+  // The family name is ours, so the menu does not depend on the file's internal name.
+  return Rml::LoadFontFace(ui_font_bytes, "UiFont", Rml::Style::FontStyle::Normal,
+                           Rml::Style::FontWeight::Normal, true);
+}
+
 bool load_ui_font() {
 #if defined(_WIN32)
   char windows[MAX_PATH] = "C:\\Windows";
   GetWindowsDirectoryA(windows, MAX_PATH);
   const char* names[] = {"segoeui.ttf", "arial.ttf", "tahoma.ttf"};
   for (const char* name : names) {
-    const std::string path = std::string(windows) + "\\Fonts\\" + name;
-    std::ifstream in(path, std::ios::binary);
-    if (!in)
-      continue;
-    in.seekg(0, std::ios::end);
-    const auto size = in.tellg();
-    if (size <= 0)
-      continue;
-    in.seekg(0, std::ios::beg);
-    ui_font_bytes.resize(static_cast<size_t>(size));
-    in.read(reinterpret_cast<char*>(ui_font_bytes.data()), size);
-    if (!in)
-      continue;
-    // The family name is ours, so the menu does not depend on the file's internal name.
-    if (Rml::LoadFontFace(ui_font_bytes, "UiFont", Rml::Style::FontStyle::Normal,
-                          Rml::Style::FontWeight::Normal, true))
+    if (load_ui_font_file(std::string(windows) + "\\Fonts\\" + name))
+      return true;
+  }
+#else
+#if defined(SH_HAS_FONTCONFIG)
+  // Distro-agnostic: resolve the configured sans-serif (DejaVu, Noto, …).
+  if (FcInit()) {
+    FcPattern* pattern = FcPatternCreate();
+    if (pattern) {
+      FcPatternAddString(pattern, FC_FAMILY, reinterpret_cast<const FcChar8*>("sans-serif"));
+      FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ROMAN);
+      FcPatternAddInteger(pattern, FC_WEIGHT, FC_WEIGHT_REGULAR);
+      // Prefer scalable outline fonts FreeType/RmlUi can load.
+      FcPatternAddBool(pattern, FC_SCALABLE, FcTrue);
+      FcConfigSubstitute(nullptr, pattern, FcMatchPattern);
+      FcDefaultSubstitute(pattern);
+      FcResult result = FcResultNoMatch;
+      FcPattern* match = FcFontMatch(nullptr, pattern, &result);
+      if (match) {
+        FcChar8* file = nullptr;
+        if (FcPatternGetString(match, FC_FILE, 0, &file) == FcResultMatch && file) {
+          const char* path = reinterpret_cast<const char*>(file);
+          if (load_ui_font_file(path)) {
+            FcPatternDestroy(match);
+            FcPatternDestroy(pattern);
+            return true;
+          }
+        }
+        FcPatternDestroy(match);
+      }
+      FcPatternDestroy(pattern);
+    }
+  }
+#endif
+  // Last resort if fontconfig is absent or the match failed to load.
+  static const char* kPaths[] = {
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+      "/usr/share/fonts/TTF/DejaVuSans.ttf",
+      "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+      "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
+      "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+      "/usr/share/fonts/noto/NotoSans-Regular.ttf",
+      "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+      "/usr/local/share/fonts/DejaVuSans.ttf",
+      "/mnt/c/Windows/Fonts/segoeui.ttf",
+      "/mnt/c/Windows/Fonts/arial.ttf",
+  };
+  for (const char* path : kPaths) {
+    if (load_ui_font_file(path))
       return true;
   }
 #endif

@@ -5,6 +5,17 @@ Bring your own MAME romset (`splatter.zip`). No game code or assets are shipped.
 
 This is **not** the Xbox 360 (2010) recomp. It targets the arcade board.
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/options-controls.png" alt="Options menu" width="48%" />
+  <img src="docs/screenshots/gameplay-stage1.png" alt="Stage 1" width="48%" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/gameplay-stage5-jennifer.png" alt="Stage 5" width="48%" />
+  <img src="docs/screenshots/gameplay-stage7-fire.png" alt="Stage 7" width="48%" />
+</p>
+
 ## How to play
 
 1. Download a [GitHub Release](https://github.com/gabo-mdev/sh-arcade-recomp/releases).
@@ -102,8 +113,9 @@ cmake --build build --parallel
 ```
 
 On Debian/Ubuntu you typically need packages for SDL’s video/audio backends, e.g.
-`ninja-build`, `cmake`, `pkg-config`, and X11/Wayland/ALSA/Pulse/udev development
-headers. CI installs a known set in `.github/workflows/release.yml`.
+`ninja-build`, `cmake`, `pkg-config`, X11/Wayland/ALSA/Pulse/udev development
+headers, plus `libfontconfig-dev` so the Escape menu picks a system sans-serif
+on any distro. CI installs a known set in `.github/workflows/release.yml`.
 
 ### Recomp / analysis scaffolding
 
