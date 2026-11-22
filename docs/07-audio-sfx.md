@@ -56,12 +56,16 @@ monster/ambient cues still deserve event-aligned listening passes.
   the video frame. The scheduler uses 16-main-CPU-cycle slices; exact CPU-cycle
   timestamps and MAME-calibrated CUS30 gain remain pending. MCU DAC writes
   now render at approximate subframe time. The voice ROM is mapped for MCU reads.
-- SDL opens a float stereo stream and queues the resulting mix. The queue is
-  now capped at three video frames during accelerated boot, so old samples
-  cannot accumulate indefinitely. Device buffering and frame-end synthesis
-  still add latency. The current `ym_mute_` path zeros the entire
-  mix, so it must be moved before any future soundtrack replacement that
-  should preserve effects.
+- SDL opens a float stereo stream and queues the resulting mix. Backlog during
+  accelerated boot drops the newest frame instead of `SDL_ClearAudioStream`
+  (a hard clear clicked/crackled under vsync hitch). An empty queue gets one
+  silence frame of preroll to absorb brief present stalls. Device buffering
+  and frame-end synthesis still add latency. The current `ym_mute_` path zeros
+  the entire mix, so it must be moved before any future soundtrack replacement
+  that should preserve effects.
+- Frame pacing: sleep is the 60.606 Hz master clock. When vsync is also on,
+  present already waited a refresh; late frames no longer snap `next_frame` to
+  `now` every time (that jitter starved the audio queue on 60 Hz displays).
 
 ## First blocker: sound CPU progression
 
@@ -113,11 +117,11 @@ currently occurs at the input edge; MAME writes it roughly eight frames after
 the edge, so timing and debounce still need comparison.
 
 The SDL stream previously accepted every generated frame without checking
-the queued byte count. Accelerated ROM checksum frames could leave playback
-far behind current game state. It now clears stale queued audio when more
-than three video frames are pending, then queues the current frame. This
-addresses a source of live latency; an offline WAV capture bypasses SDL and
-must be used to distinguish missing synthesis from delayed playback.
+the queued byte count, then later cleared the whole stream when more than
+three frames were pending. Clearing made vsync/display hitches audible as
+bed crackle. Backlog now skips queueing the newest frame (cap six frames) and
+pads silence when the queue is nearly empty. Offline WAV capture still
+bypasses SDL.
 
 The Rick/Jennifer attract cue was silent for a different reason. The updater
 at main `$BA80` posts the shared triram song only when `$1479` is nonzero or

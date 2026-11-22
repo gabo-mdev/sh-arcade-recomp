@@ -862,11 +862,14 @@ int Machine::run(int frames) {
             next_frame = clock::now();
           }
         }
+        // Audio is authored for 60.606 Hz. Sleep is the master clock when
+        // vsync is off. Snapping next_frame every late frame caused audio
+        // underruns on 60 Hz panels; only resync after >3 frames late.
         next_frame += kFrameTime;
         const auto now = clock::now();
         if (now < next_frame)
           std::this_thread::sleep_until(next_frame);
-        else
+        else if (now - next_frame > kFrameTime * 3)
           next_frame = now;
       }
     }

@@ -698,11 +698,19 @@ struct SdlAudio final : IAudioBackend {
   void queue(std::span<const float> interleaved) override {
     if (!stream || interleaved.empty())
       return;
-    // Boot/checksum frames can run much faster than playback. Do not let
-    // their audio accumulate ahead of the current emulated frame.
+    // One emulated frame = 792 stereo floats @ 48 kHz ≈ 16.5 ms.
+    // Clearing the stream on backlog makes an audible click/crackle; drop the
+    // newest frame instead and keep whatever is already queued contiguous.
+    // Pad a frame of silence when the queue is empty so a vsync hitch does
+    // not underrun into noise.
     const int frame_bytes = int(interleaved.size() * sizeof(float));
-    if (SDL_GetAudioStreamQueued(stream) > frame_bytes * 3)
-      SDL_ClearAudioStream(stream);
+    const int queued = SDL_GetAudioStreamQueued(stream);
+    if (queued > frame_bytes * 6)
+      return;
+    if (queued < frame_bytes / 4) {
+      scratch_.assign(interleaved.size(), 0.f);
+      SDL_PutAudioStreamData(stream, scratch_.data(), frame_bytes);
+    }
     if (ym_mute_) {
       // OST path: host may inject replacement elsewhere; queue silence for YM mix.
       scratch_.assign(interleaved.size(), 0.f);
